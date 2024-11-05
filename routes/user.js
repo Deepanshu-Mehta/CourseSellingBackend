@@ -2,7 +2,7 @@ const { Router } = require("express");
 const router = Router();
 const userMiddleware = require("../middleware/user");
 const { User } = require("../db");
-
+const jwt = require('jsonwebtoken');
 // User Routes
 router.post('/signup', (req, res) => {
     // Implement user signup logic
@@ -11,7 +11,14 @@ router.post('/signup', (req, res) => {
     if (user) {
         res.status(400).send({message: 'User already exists'});
     }
-    res.status(200).json({ message: 'User created successfully'})
+    const jwtToken = jwt.sign({username, type :'user'}, process.env.JWT_SECRET);
+    res.status(200).json(jwtToken);
+});
+
+router.post('/signin', (req, res) => {
+    // Implement admin signup logic
+    const {username, password} = req.body;
+    
 });
 
 router.get('/courses', (req, res) => {
