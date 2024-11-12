@@ -1,33 +1,95 @@
+// routes/admin.js
 const { Router } = require("express");
 const adminMiddleware = require("../middleware/admin");
 const { Admin, Course } = require("../db");
 const router = Router();
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const { JWT_SECRET } = require('../config');
 
-// Admin Routes
-router.post('/signup', async(req, res) => {
-    // Implement admin signup logic
-    const {username, password} = req.body;
-    const admin = await Admin.findOne({username, password});
-    if(admin){
-        res.status(400).send({message: "Admin already exists"});
+router.post('/signup', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        // Check if admin already exists
+        const existingAdmin = await Admin.findOne({ username });
+        if (existingAdmin) {
+            return res.status(400).json({ message: 'Admin already exists' });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create admin
+        await Admin.create({
+            username,
+            password: hashedPassword
+        });
+
+        res.status(201).json({ message: 'Admin created successfully' });
+    } catch (error) {
+        console.error('Admin Signup Error:', error);
+        res.status(500).json({ message: 'Error creating admin' });
     }
-    await Admin.create({
-        username, password
-    });
-    res.status(201).send({message: "Admin created successfully"});
 });
 
-router.post('/courses', adminMiddleware, async(req, res) => {
-    // Implement course creation logic
-    const {courseName, courseDescription, coursePrice, courseImagelink} = req.body;
-    const newCourse = await Course.create({courseName, courseDescription, coursePrice, courseImagelink});
-    res.status(200).json({ message: 'Course created successfully', courseId: newCourse._id});
+router.post('/signin', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        // Find admin
+        const admin = await Admin.findOne({ username });
+        if (!admin) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Verify password
+        const isValidPassword = await bcrypt.compare(password, admin.password);
+        if (!isValidPassword) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Generate token
+        const token = jwt.sign(
+            { username, type: 'admin' },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        res.json({ token });
+    } catch (error) {
+        console.error('Admin Signin Error:', error);
+        res.status(500).json({ message: 'Error signing in' });
+    }
 });
 
-router.get('/courses', adminMiddleware, (req, res) => {
-    // Implement fetching all courses logic
-    const allCourses = Course.find({});
-    res.status(200).json(allCourses);
+router.post('/courses', adminMiddleware, async (req, res) => {
+    try {
+        const { courseName, courseDescription, coursePrice, courseImagelink } = req.body;
+        
+        const newCourse = await Course.create({
+            courseName,
+            courseDescription,
+            coursePrice,
+            courseImagelink
+        });
+
+        res.status(201).json({
+            message: 'Course created successfully',
+            courseId: newCourse._id
+        });
+    } catch (error) {
+        console.error('Course Creation Error:', error);
+        res.status(500).json({ message: 'Error creating course' });
+    }
 });
 
-module.exports = router;
+router.get('/courses', adminMiddleware, async (req, res) => {
+    try {
+        const allCourses = await Course.find({});
+        res.json(allCourses);
+    } catch (error) {
+        console.error('Fetch Courses Error:', error);
+        res.status(500).json({ message: 'Error fetching courses' });
+    }
+});

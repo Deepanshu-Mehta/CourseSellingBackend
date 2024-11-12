@@ -1,19 +1,18 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
-// Connect to MongoDB
-mongoose.connect(process.env.mongo_URL);
 
-// Define schemas
+mongoose.connect(process.env.mongo_URL)
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('MongoDB connection error:', err));
+
 const AdminSchema = new mongoose.Schema({
-    // Schema definition here
-    username : String,
-    password : String
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true }
 });
 
 const UserSchema = new mongoose.Schema({
-    // Schema definition here
-    username : String,
-    password : String,
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
     purchasedCourses: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course'
@@ -21,11 +20,10 @@ const UserSchema = new mongoose.Schema({
 });
 
 const CourseSchema = new mongoose.Schema({
-    // Schema definition here
-    courseName : String,
-    courseDescription : String,
-    coursePrice : Number,
-    courseImagelink : String
+    courseName: { type: String, required: true },
+    courseDescription: { type: String, required: true },
+    coursePrice: { type: Number, required: true },
+    courseImagelink: { type: String, required: true }
 });
 
 const Admin = mongoose.model('Admin', AdminSchema);
