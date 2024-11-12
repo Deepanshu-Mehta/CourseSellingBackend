@@ -1,7 +1,7 @@
 // routes/admin.js
 const { Router } = require("express");
 const adminMiddleware = require("../middleware/admin");
-const { Admin, Course } = require("../db");
+const { Admin, Course, User } = require("../db");
 const router = Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -93,3 +93,65 @@ router.get('/courses', adminMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Error fetching courses' });
     }
 });
+
+router.put('/courses/:courseId', adminMiddleware, async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const { courseName, courseDescription, coursePrice, courseImagelink } = req.body;
+
+        // Check if course exists
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        // Update course
+        const updatedCourse = await Course.findByIdAndUpdate(
+            courseId,
+            {
+                courseName,
+                courseDescription,
+                coursePrice,
+                courseImagelink
+            },
+            { new: true } // Return updated document
+        );
+
+        res.json({
+            message: 'Course updated successfully',
+            course: updatedCourse
+        });
+    } catch (error) {
+        console.error('Course Update Error:', error);
+        res.status(500).json({ message: 'Error updating course' });
+    }
+});
+
+// Delete course
+router.delete('/courses/:courseId', adminMiddleware, async (req, res) => {
+    try {
+        const { courseId } = req.params;
+
+        // Check if course exists
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        // Remove course from all users who purchased it
+        await User.updateMany(
+            { purchasedCourses: courseId },
+            { $pull: { purchasedCourses: courseId } }
+        );
+
+        // Delete the course
+        await Course.findByIdAndDelete(courseId);
+
+        res.json({ message: 'Course deleted successfully' });
+    } catch (error) {
+        console.error('Course Deletion Error:', error);
+        res.status(500).json({ message: 'Error deleting course' });
+    }
+});
+
+module.exports = router;

@@ -27,14 +27,8 @@ router.post('/signup', async (req, res) => {
             purchasedCourses: []
         });
 
-        // Generate token
-        const token = jwt.sign(
-            { username, type: 'user' },
-            JWT_SECRET,
-            { expiresIn: '24h' }
-        );
 
-        res.status(201).json({ token });
+        res.status(201).json({message : "user created"});
     } catch (error) {
         console.error('User Signup Error:', error);
         res.status(500).json({ message: 'Error creating user' });
@@ -128,6 +122,76 @@ router.get('/purchasedCourses', userMiddleware, async (req, res) => {
     } catch (error) {
         console.error('Fetch Purchased Courses Error:', error);
         res.status(500).json({ message: 'Error fetching purchased courses' });
+    }
+});
+
+router.put('/profile', userMiddleware, async (req, res) => {
+    try {
+        const { username } = req.body;
+        const { newUsername, currentPassword, newPassword } = req.body;
+
+        // Find user
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // If updating password, verify current password
+        if (newPassword) {
+            const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+            if (!isValidPassword) {
+                return res.status(401).json({ message: 'Current password is incorrect' });
+            }
+            // Hash new password
+            user.password = await bcrypt.hash(newPassword, 10);
+        }
+
+        // If updating username, check if new username is available
+        if (newUsername && newUsername !== username) {
+            const existingUser = await User.findOne({ username: newUsername });
+            if (existingUser) {
+                return res.status(400).json({ message: 'Username already taken' });
+            }
+            user.username = newUsername;
+        }
+
+        // Save updates
+        await user.save();
+
+        res.json({ 
+            message: 'Profile updated successfully',
+            username: user.username
+        });
+    } catch (error) {
+        console.error('Profile Update Error:', error);
+        res.status(500).json({ message: 'Error updating profile' });
+    }
+});
+
+// Delete user account
+router.delete('/profile', userMiddleware, async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        // Find user
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Verify password before deletion
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
+            return res.status(401).json({ message: 'Invalid password' });
+        }
+
+        // Delete user
+        await User.findByIdAndDelete(user._id);
+
+        res.json({ message: 'Account deleted successfully' });
+    } catch (error) {
+        console.error('Account Deletion Error:', error);
+        res.status(500).json({ message: 'Error deleting account' });
     }
 });
 
