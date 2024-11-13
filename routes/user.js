@@ -74,31 +74,35 @@ router.get('/courses', async (req, res) => {
         res.status(500).json({ message: 'Error fetching courses' });
     }
 });
-
-router.post('/courses/:courseId', userMiddleware, async (req, res) => {
+router.post('/courses/:id', userMiddleware, async (req, res) => {
     try {
-        const { courseId } = req.params;
+        const { id } = req.params;
         const { username } = req.body;
+
+        console.log("Username:", username);  // Log to ensure username is available
 
         // Find user
         const user = await User.findOne({ username });
         if (!user) {
+            console.error("User not found");
             return res.status(404).json({ message: 'User not found' });
         }
 
         // Check if course exists
-        const course = await Course.findById(courseId);
+        const course = await Course.findById(id);
         if (!course) {
+            console.error("Course not found");
             return res.status(404).json({ message: 'Course not found' });
         }
 
         // Check if course is already purchased
-        if (user.purchasedCourses.includes(courseId)) {
+        if (user.purchasedCourses.includes(id)) {
+            console.warn("Course already purchased");
             return res.status(400).json({ message: 'Course already purchased' });
         }
 
         // Add course to user's purchased courses
-        user.purchasedCourses.push(courseId);
+        user.purchasedCourses.push(id);
         await user.save();
 
         res.json({ message: 'Course purchased successfully' });
