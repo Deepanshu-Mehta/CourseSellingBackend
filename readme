@@ -1,128 +1,53 @@
-Course Management and Authentication API
-This project is a RESTful API for managing courses and user authentication with role-based access. It supports two main user roles, admin and user, with different access permissions. The API includes endpoints for course creation, course enrollment, profile management, and authentication.
 
-Features
-Authentication: Role-based access with JSON Web Tokens (JWT) for admins and users.
-Course Management: CRUD operations for courses (admin access only).
-Profile Management: Update or delete user profiles.
-Secure Password Storage: Uses bcrypt for hashing passwords.
-Error Handling: Centralized error handler for better debugging.
-Table of Contents
-Project Setup
-Environment Variables
-Database Configuration
-API Endpoints
-Project Structure
-Error Handling
-Project Setup
-Clone the repository:
+## Create a course selling website
 
-bash
-Copy code
-git clone https://github.com/your-username/course-management-api.git
-cd course-management-api
-Install dependencies:
+### Description
+It needs to support two types of users - 
+1. Admins
+2. Users
 
-bash
-Copy code
-npm install
-Configure environment variables (see Environment Variables section).
 
-Start the server:
 
-bash
-Copy code
-npm start
-Environment Variables
-Create a .env file at the project root and set the following variables:
+## Routes
 
-plaintext
-Copy code
-PORT=3000
-NODE_ENV=development
-mongo_URL='mongodb+srv://<your-mongo-credentials>'
-JWT_SECRET='your-jwt-secret'
-Database Configuration
-The application uses MongoDB for data storage. Make sure to replace <your-mongo-credentials> with your MongoDB credentials in .env.
+### Admin Routes:
 
-The database connection is configured in config/database.js:
+- POST /admin/signup
+  Description: Creates a new admin account.
+  Input Body: { username: 'admin', password: 'pass' }
+  Output: { message: 'Admin created successfully' }
+- POST /admin/signin
+  Description: Logs in an admin account.
+  Input Body: { username: 'admin', password: 'pass' }
+  Output: { token: 'your-token' }
+- POST /admin/courses
+  Description: Creates a new course.
+  Input: Headers: { 'Authorization': 'Bearer <your-token>' }, Body: { title: 'course title', description: 'course description', price: 100, imageLink: 'https://linktoimage.com' }
+  Output: { message: 'Course created successfully', courseId: "new course id" }
+- GET /admin/courses
+  Description: Returns all the courses.
+  Input: Headers: { 'Authorization': 'Bearer <your-token>' }
+  Output: { courses: [ { id: 1, title: 'course title', description: 'course description', price: 100, imageLink: 'https://linktoimage.com', published: true }, ... ] }
 
-javascript
-Copy code
-const mongoose = require('mongoose');
-require('dotenv').config();
+### User routes
 
-const connectDB = async () => {
-    try {
-        await mongoose.connect(process.env.mongo_URL);
-        console.log('Connected to MongoDB');
-    } catch (err) {
-        console.error('MongoDB connection error:', err);
-        process.exit(1);
-    }
-};
-
-module.exports = connectDB;
-API Endpoints
-Admin Routes
-Method	Endpoint	Description
-POST	/admin/signup	Register a new admin
-POST	/admin/signin	Admin login
-POST	/admin/courses	Create a new course
-GET	/admin/courses	Get all courses
-PUT	/admin/courses/:id	Update a course by ID
-DELETE	/admin/courses/:id	Delete a course by ID
-User Routes
-Method	Endpoint	Description
-POST	/user/signup	Register a new user
-POST	/user/signin	User login
-GET	/user/courses	Get list of courses
-POST	/user/courses/:id	Enroll in a course
-GET	/user/purchasedCourses	Get purchased courses
-PUT	/user/profile	Update user profile
-DELETE	/user/profile	Delete user profile
-Project Structure
-plaintext
-Copy code
-├── config
-│   ├── database.js            # Database connection setup
-│   └── jwt.js                 # JWT secret configuration
-├── controllers
-│   ├── admin
-│   │   ├── auth.controller.js # Admin authentication (signup & signin)
-│   │   └── course.controller.js # Course management for admins
-│   └── user
-│       └── auth.controller.js # User authentication
-├── middleware
-│   ├── auth
-│   │   ├── adminAuth.js       # Admin authentication middleware
-│   │   └── userAuth.js        # User authentication middleware
-│   └── errorHandler.js        # Centralized error handler
-├── models
-│   ├── admin.model.js         # Admin schema
-│   ├── course.model.js        # Course schema
-│   └── user.model.js          # User schema
-├── routes
-│   └── v1
-│       ├── admin.routes.js    # Admin routes
-│       └── user.routes.js     # User routes
-├── services
-│   ├── auth.service.js        # Authentication service
-│   └── course.service.js      # Course management service
-├── app.js                     # Main application setup and routing
-└── .env                       # Environment variables
-Error Handling
-A centralized error handler is implemented in middleware/errorHandler.js to manage errors in a uniform way. If an error occurs, a JSON response with a message and, in development mode, the error stack is returned.
-
-Sample Error Response
-json
-Copy code
-{
-  "message": "Something went wrong!",
-  "error": "Detailed error message for development mode only"
-}
-License
-This project is licensed under the MIT License. See the LICENSE file for details.
-
-Contributing
-Feel free to submit issues, fork the repository, and send pull requests. Contributions are always welcome!
+- POST /users/signup
+  Description: Creates a new user account.
+  Input: { username: 'user', password: 'pass' }
+  Output: { message: 'User created successfully' }
+- POST /users/signin
+  Description: Logs in a user account.
+  Input: { username: 'user', password: 'pass' }
+  Output: { token: 'your-token' }
+- GET /users/courses
+  Description: Lists all the courses.
+  Input: Headers: { 'Authorization': 'Bearer <your-token>' }
+  Output: { courses: [ { id: 1, title: 'course title', description: 'course description', price: 100, imageLink: 'https://linktoimage.com', published: true }, ... ] }
+- POST /users/courses/:courseId
+  Description: Purchases a course. courseId in the URL path should be replaced with the ID of the course to be purchased.
+  Input: Headers: { 'Authorization': 'Bearer <your-token>' }
+  Output: { message: 'Course purchased successfully' }
+- GET /users/purchasedCourses
+  Description: Lists all the courses purchased by the user.
+  Input: Headers: { 'Authorization': 'Bearer <your-token>' }
+  Output: { purchasedCourses: [ { id: 1, title: 'course title', description: 'course description', price: 100, imageLink: 'https://linktoimage.com', published: true }, ... ] }
