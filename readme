@@ -1,53 +1,230 @@
+# Course Selling Website API Documentation
 
-## Create a course selling website
+A backend API for a course selling platform that supports two types of users: Admins and Users.
 
-### Description
-It needs to support two types of users - 
-1. Admins
-2. Users
+## Authentication
 
+All protected routes require a JWT token passed in the Authorization header:
+```
+Authorization: Bearer <your-token>
+```
 
+## Admin Routes
 
-## Routes
+### Authentication
 
-### Admin Routes:
+#### POST /admin/signup
+Creates a new admin account.
+- **Input Body**: 
+```json
+{
+    "username": "admin",
+    "password": "password"
+}
+```
+- **Response**: 
+```json
+{
+    "message": "Admin created successfully"
+}
+```
 
-- POST /admin/signup
-  Description: Creates a new admin account.
-  Input Body: { username: 'admin', password: 'pass' }
-  Output: { message: 'Admin created successfully' }
-- POST /admin/signin
-  Description: Logs in an admin account.
-  Input Body: { username: 'admin', password: 'pass' }
-  Output: { token: 'your-token' }
-- POST /admin/courses
-  Description: Creates a new course.
-  Input: Headers: { 'Authorization': 'Bearer <your-token>' }, Body: { title: 'course title', description: 'course description', price: 100, imageLink: 'https://linktoimage.com' }
-  Output: { message: 'Course created successfully', courseId: "new course id" }
-- GET /admin/courses
-  Description: Returns all the courses.
-  Input: Headers: { 'Authorization': 'Bearer <your-token>' }
-  Output: { courses: [ { id: 1, title: 'course title', description: 'course description', price: 100, imageLink: 'https://linktoimage.com', published: true }, ... ] }
+#### POST /admin/signin
+Authenticates an admin and returns a JWT token.
+- **Input Body**: 
+```json
+{
+    "username": "admin",
+    "password": "password"
+}
+```
+- **Response**: 
+```json
+{
+    "token": "<jwt-token>"
+}
+```
 
-### User routes
+### Course Management
 
-- POST /users/signup
-  Description: Creates a new user account.
-  Input: { username: 'user', password: 'pass' }
-  Output: { message: 'User created successfully' }
-- POST /users/signin
-  Description: Logs in a user account.
-  Input: { username: 'user', password: 'pass' }
-  Output: { token: 'your-token' }
-- GET /users/courses
-  Description: Lists all the courses.
-  Input: Headers: { 'Authorization': 'Bearer <your-token>' }
-  Output: { courses: [ { id: 1, title: 'course title', description: 'course description', price: 100, imageLink: 'https://linktoimage.com', published: true }, ... ] }
-- POST /users/courses/:courseId
-  Description: Purchases a course. courseId in the URL path should be replaced with the ID of the course to be purchased.
-  Input: Headers: { 'Authorization': 'Bearer <your-token>' }
-  Output: { message: 'Course purchased successfully' }
-- GET /users/purchasedCourses
-  Description: Lists all the courses purchased by the user.
-  Input: Headers: { 'Authorization': 'Bearer <your-token>' }
-  Output: { purchasedCourses: [ { id: 1, title: 'course title', description: 'course description', price: 100, imageLink: 'https://linktoimage.com', published: true }, ... ] }
+#### POST /admin/courses
+Creates a new course. Requires admin authentication.
+- **Headers**: Authorization Bearer Token
+- **Input Body**: 
+```json
+{
+    "courseName": "Course Title",
+    "courseDescription": "Course Description",
+    "coursePrice": 100,
+    "courseImagelink": "https://example.com/image.jpg"
+}
+```
+- **Response**: 
+```json
+{
+    "message": "Course created successfully",
+    "courseId": "<course-id>"
+}
+```
+
+#### GET /admin/courses
+Retrieves all courses. Requires admin authentication.
+- **Headers**: Authorization Bearer Token
+- **Response**: Array of course objects
+
+#### PUT /admin/courses/:courseId
+Updates an existing course. Requires admin authentication.
+- **Headers**: Authorization Bearer Token
+- **Input Body**: 
+```json
+{
+    "courseName": "Updated Title",
+    "courseDescription": "Updated Description",
+    "coursePrice": 150,
+    "courseImagelink": "https://example.com/new-image.jpg"
+}
+```
+- **Response**: 
+```json
+{
+    "message": "Course updated successfully",
+    "course": {
+        // Updated course object
+    }
+}
+```
+
+#### DELETE /admin/courses/:courseId
+Deletes a course and removes it from all users' purchased courses. Requires admin authentication.
+- **Headers**: Authorization Bearer Token
+- **Response**: 
+```json
+{
+    "message": "Course deleted successfully"
+}
+```
+
+## User Routes
+
+### Authentication
+
+#### POST /user/signup
+Creates a new user account.
+- **Input Body**: 
+```json
+{
+    "username": "user",
+    "password": "password"
+}
+```
+- **Response**: 
+```json
+{
+    "message": "user created"
+}
+```
+
+#### POST /user/signin
+Authenticates a user and returns a JWT token.
+- **Input Body**: 
+```json
+{
+    "username": "user",
+    "password": "password"
+}
+```
+- **Response**: 
+```json
+{
+    "token": "<jwt-token>"
+}
+```
+
+### Course Management
+
+#### GET /user/courses
+Lists all available courses. No authentication required.
+- **Response**: Array of course objects
+
+#### POST /user/courses/:id
+Purchases a course. Requires user authentication.
+- **Headers**: Authorization Bearer Token
+- **Response**: 
+```json
+{
+    "message": "Course purchased successfully"
+}
+```
+
+#### GET /user/purchasedCourses
+Lists all courses purchased by the authenticated user. Requires user authentication.
+- **Headers**: Authorization Bearer Token
+- **Response**: Array of purchased course objects
+
+### Profile Management
+
+#### PUT /user/profile
+Updates user profile information. Requires user authentication.
+- **Headers**: Authorization Bearer Token
+- **Input Body**: 
+```json
+{
+    "newUsername": "newUsername",     // Optional
+    "currentPassword": "currentPass", // Required for password change
+    "newPassword": "newPass"         // Optional
+}
+```
+- **Response**: 
+```json
+{
+    "message": "Profile updated successfully",
+    "username": "newUsername"
+}
+```
+
+#### DELETE /user/profile
+Deletes user account. Requires user authentication and password confirmation.
+- **Headers**: Authorization Bearer Token
+- **Input Body**: 
+```json
+{
+    "username": "user",
+    "password": "password"
+}
+```
+- **Response**: 
+```json
+{
+    "message": "Account deleted successfully"
+}
+```
+
+## Error Responses
+
+All endpoints may return the following error responses:
+- 400: Bad Request (Invalid input)
+- 401: Unauthorized (Invalid or missing token)
+- 404: Not Found
+- 500: Internal Server Error
+
+## Environment Variables Required
+
+- `JWT_SECRET`: Secret key for JWT token generation/verification
+- `mongo_URL`: MongoDB connection string
+
+## Models
+
+### Admin
+- username (String, required, unique)
+- password (String, required)
+
+### User
+- username (String, required, unique)
+- password (String, required)
+- purchasedCourses (Array of Course ObjectIds)
+
+### Course
+- courseName (String, required)
+- courseDescription (String, required)
+- coursePrice (Number, required)
+- courseImagelink (String, required)
