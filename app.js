@@ -1,17 +1,27 @@
-require('dotenv').config();
 const express = require('express');
-const bodyParser = require('body-parser');
+const connectDB = require('./config/database');
+const errorHandler = require('./middleware/errorHandler');
+const adminRoutes = require('./routes/v1/admin.routes');
+const userRoutes = require('./routes/v1/user.routes');
+
 const app = express();
-const adminRouter = require("./routes/admin");
-const userRouter = require("./routes/user");
 
-// Middleware for parsing request bodies
-app.use(bodyParser.json());
-app.use("/admin", adminRouter);
-app.use("/user", userRouter);
+// Connect to database
+connectDB();
 
-const PORT = 3000;
+// Middleware
+app.use(express.json());
 
+// Routes
+app.use('/admin', adminRoutes);
+app.use('/user', userRoutes);
+
+// Error handling
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+module.exports = app;
